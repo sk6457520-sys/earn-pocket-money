@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Earn Pocket Money</title>
 
   <style>
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -21,7 +25,7 @@
     }
 
     header {
-      background: #fff;
+      background: #ffffff;
       padding: 22px 15px;
       text-align: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
@@ -69,6 +73,7 @@
       text-align: center;
       padding: 30px 10px;
       color: #555;
+      font-size: 17px;
     }
 
     #error {
@@ -79,6 +84,7 @@
       border-radius: 10px;
       margin-bottom: 15px;
       text-align: center;
+      line-height: 1.5;
     }
 
     #taskList {
@@ -94,6 +100,13 @@
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
+    .task-number {
+      color: #1877f2;
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
     .task-top {
       display: flex;
       justify-content: space-between;
@@ -104,6 +117,7 @@
     .task-title {
       font-size: 25px;
       font-weight: bold;
+      word-break: break-word;
     }
 
     .reward {
@@ -145,6 +159,7 @@
       border-radius: 15px;
       text-align: center;
       color: #666;
+      line-height: 1.5;
     }
 
     footer {
@@ -153,446 +168,658 @@
       color: #777;
       font-size: 13px;
     }
+
   </style>
+
 </head>
+
 
 <body>
 
-<header>
-  <h1>Earn Pocket Money</h1>
-  <p>Complete tasks and earn rewards</p>
-</header>
 
-<div class="container">
+  <header>
 
-  <div class="welcome">
-    <h2>Available Tasks</h2>
-    <p>Choose a task below to get started.</p>
+    <h1>Earn Pocket Money</h1>
+
+    <p>Complete tasks and earn rewards</p>
+
+  </header>
+
+
+  <div class="container">
+
+
+    <div class="welcome">
+
+      <h2>Available Tasks</h2>
+
+      <p>Choose a task below to get started.</p>
+
+    </div>
+
+
+    <div id="error"></div>
+
+
+    <div id="loading">
+      Loading tasks...
+    </div>
+
+
+    <div id="taskList"></div>
+
+
   </div>
 
-  <div id="error"></div>
 
-  <div id="loading">
-    Loading tasks...
-  </div>
+  <footer>
 
-  <div id="taskList"></div>
+    © 2026 Earn Pocket Money
 
-</div>
-
-<footer>
-  © 2026 Earn Pocket Money
-</footer>
+  </footer>
 
 
-<script type="module">
 
-  /* ===============================
-     FIREBASE
-  =============================== */
-
-  import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-  import {
-    getFirestore,
-    collection,
-    getDocs
-  }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <script type="module">
 
 
-  /* ===============================
-     FIREBASE CONFIG
-  =============================== */
+    /* =====================================
+       FIREBASE IMPORT
+    ===================================== */
 
-  const firebaseConfig = {
+    import { initializeApp }
 
-    apiKey: "AIzaSyD73vPDGWuHdMRsnUWQ_NFXDMWIHPcrviE",
-
-    authDomain:
-      "earn-pocket-money-4b1db.firebaseapp.com",
-
-    projectId:
-      "earn-pocket-money-4b1db",
-
-    storageBucket:
-      "earn-pocket-money-4b1db.firebasestorage.app",
-
-    messagingSenderId:
-      "409452910576",
-
-    appId:
-      "1:409452910576:web:3ffeda7b9a85b05cf9ef35",
-
-    measurementId:
-      "G-M7VKBVE2MM"
-  };
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 
-  /* ===============================
-     FIREBASE START
-  =============================== */
+    import {
 
-  const app =
-    initializeApp(firebaseConfig);
+      getFirestore,
+      collection,
+      getDocs
 
-  const db =
-    getFirestore(app);
+    }
 
-
-  /* ===============================
-     HTML
-  =============================== */
-
-  const taskList =
-    document.getElementById("taskList");
-
-  const loading =
-    document.getElementById("loading");
-
-  const errorBox =
-    document.getElementById("error");
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-  /* ===============================
-     FIELD FINDER
-     
-     Ye function Title/title,
-     Reward/reward,
-     App Link/App link etc.
-     sabko automatically identify karega.
-  =============================== */
 
-  function getField(data, possibleNames) {
+    /* =====================================
+       FIREBASE CONFIG
+    ===================================== */
 
-    const keys =
-      Object.keys(data);
+    const firebaseConfig = {
 
-    for (const wanted of possibleNames) {
+      apiKey:
+        "AIzaSyD73vPDGWuHdMRsnUWQ_NFXDMWIHPcrviE",
 
-      const cleanWanted =
-        wanted
-          .toLowerCase()
-          .replace(/\s+/g, "");
+      authDomain:
+        "earn-pocket-money-4b1db.firebaseapp.com",
 
-      for (const key of keys) {
+      projectId:
+        "earn-pocket-money-4b1db",
 
-        const cleanKey =
-          key
+      storageBucket:
+        "earn-pocket-money-4b1db.firebasestorage.app",
+
+      messagingSenderId:
+        "409452910576",
+
+      appId:
+        "1:409452910576:web:3ffeda7b9a85b05cf9ef35",
+
+      measurementId:
+        "G-M7VKBVE2MM"
+
+    };
+
+
+
+    /* =====================================
+       FIREBASE START
+    ===================================== */
+
+    const app =
+      initializeApp(firebaseConfig);
+
+
+    const db =
+      getFirestore(app);
+
+
+
+    /* =====================================
+       HTML ELEMENTS
+    ===================================== */
+
+    const taskList =
+      document.getElementById("taskList");
+
+
+    const loading =
+      document.getElementById("loading");
+
+
+    const errorBox =
+      document.getElementById("error");
+
+
+
+    /* =====================================
+       FIELD FINDER
+    ===================================== */
+
+    function getField(data, possibleNames) {
+
+      const keys =
+        Object.keys(data);
+
+
+      for (const wanted of possibleNames) {
+
+        const cleanWanted =
+          wanted
             .toLowerCase()
             .replace(/\s+/g, "");
 
-        if (cleanKey === cleanWanted) {
 
-          return data[key];
+        for (const key of keys) {
+
+          const cleanKey =
+            key
+              .toLowerCase()
+              .replace(/\s+/g, "");
+
+
+          if (cleanKey === cleanWanted) {
+
+            return data[key];
+
+          }
 
         }
+
       }
+
+
+      return "";
+
     }
 
-    return "";
-  }
 
 
-  /* ===============================
-     LOAD TASKS
-  =============================== */
+    /* =====================================
+       GET TASK NUMBER
+    ===================================== */
 
-  async function loadTasks() {
+    function getTaskNumber(id) {
 
-    try {
-
-      const snapshot =
-        await getDocs(
-          collection(db, "Task")
-        );
+      const match =
+        String(id).match(/\d+/);
 
 
-      loading.style.display =
-        "none";
+      if (match) {
 
-
-      let tasks = [];
-
-
-      snapshot.forEach((doc) => {
-
-        const data =
-          doc.data();
-
-
-        /* Firebase fields */
-
-        const title =
-          getField(
-            data,
-            ["Title", "title", "Task Name", "taskName"]
-          );
-
-
-        const reward =
-          getField(
-            data,
-            ["Reward", "reward"]
-          );
-
-
-        const status =
-          getField(
-            data,
-            ["Status", "status"]
-          );
-
-
-        const link =
-          getField(
-            data,
-            [
-              "App Link",
-              "App link",
-              "app link",
-              "AppLink",
-              "appLink",
-              "Link",
-              "link"
-            ]
-          );
-
-
-        tasks.push({
-
-          id: doc.id,
-
-          title: title,
-
-          reward: reward,
-
-          status: status,
-
-          link: link
-
-        });
-
-      });
-
-
-      /* ===============================
-         ONLY ACTIVE TASKS
-      =============================== */
-
-      tasks =
-        tasks.filter((task) => {
-
-          return String(task.status)
-            .trim()
-            .toLowerCase() === "active";
-
-        });
-
-
-      /* ===============================
-         TASK ORDER
-      =============================== */
-
-      tasks.sort((a, b) => {
-
-        const numberA =
-          parseInt(
-            String(a.id)
-              .match(/\d+/)?.[0] || "0"
-          );
-
-        const numberB =
-          parseInt(
-            String(b.id)
-              .match(/\d+/)?.[0] || "0"
-          );
-
-        return numberA - numberB;
-
-      });
-
-
-      /* ===============================
-         NO TASK
-      =============================== */
-
-      if (tasks.length === 0) {
-
-        taskList.innerHTML = `
-
-          <div class="empty">
-
-            Abhi koi active task
-            available nahi hai.
-
-          </div>
-
-        `;
-
-        return;
+        return match[0];
 
       }
 
 
-      /* ===============================
-         SHOW TASKS
-      =============================== */
+      return "";
 
-      tasks.forEach((task) => {
-
-        const card =
-          document.createElement("div");
+    }
 
 
-        card.className =
-          "task-card";
+
+    /* =====================================
+       LOAD TASKS
+    ===================================== */
+
+    async function loadTasks() {
+
+      try {
 
 
-        const title = task.Title || task.title || task.id;
-    : task.id;
+        /* Get Task collection */
 
-
-        const reward =
-          task.reward === ""
-            ? "0"
-            : task.reward;
-
-
-        const link =
-          task.link || "";
-
-
-        card.innerHTML = `
-
-          <div class="task-top">
-
-            <div class="task-title">
-
-              ${escapeHTML(
-                String(title)
-              )}
-
-            </div>
-
-
-            <div class="reward">
-
-              ₹${escapeHTML(
-                String(reward)
-              )}
-
-            </div>
-
-          </div>
-
-
-          <div class="task-status">
-
-            ● Active
-
-          </div>
-
-
-          <button class="task-button">
-
-            Start Task
-
-          </button>
-
-        `;
-
-
-        const button =
-          card.querySelector(
-            ".task-button"
+        const snapshot =
+          await getDocs(
+            collection(db, "Task")
           );
 
 
-        button.addEventListener(
-          "click",
-          () => {
 
-            if (!link) {
+        /* Hide loading */
 
-              alert(
-                "Is task ka link available nahi hai."
+        loading.style.display =
+          "none";
+
+
+
+        let tasks = [];
+
+
+
+        /* =================================
+           READ EVERY TASK
+        ================================= */
+
+        snapshot.forEach((doc) => {
+
+
+          const data =
+            doc.data();
+
+
+
+          /* App Name */
+
+          const title =
+            getField(
+
+              data,
+
+              [
+                "Title",
+                "title",
+                "Task Name",
+                "taskName",
+                "App Name",
+                "appName"
+              ]
+
+            );
+
+
+
+          /* Reward */
+
+          const reward =
+            getField(
+
+              data,
+
+              [
+                "Reward",
+                "reward"
+              ]
+
+            );
+
+
+
+          /* Status */
+
+          const status =
+            getField(
+
+              data,
+
+              [
+                "Status",
+                "status"
+              ]
+
+            );
+
+
+
+          /* App Link */
+
+          const link =
+            getField(
+
+              data,
+
+              [
+                "App Link",
+                "App link",
+                "app link",
+                "AppLink",
+                "appLink",
+                "Link",
+                "link"
+              ]
+
+            );
+
+
+
+          /* Task number */
+
+          const taskNumber =
+            getTaskNumber(doc.id);
+
+
+
+          tasks.push({
+
+            id: doc.id,
+
+            taskNumber: taskNumber,
+
+            title: title,
+
+            reward: reward,
+
+            status: status,
+
+            link: link
+
+          });
+
+
+        });
+
+
+
+        /* =================================
+           ONLY ACTIVE TASKS
+        ================================= */
+
+        tasks =
+          tasks.filter((task) => {
+
+            return String(task.status)
+              .trim()
+              .toLowerCase() === "active";
+
+          });
+
+
+
+        /* =================================
+           TASK NUMBER ORDER
+        ================================= */
+
+        tasks.sort((a, b) => {
+
+          const numberA =
+            parseInt(
+              a.taskNumber || "0"
+            );
+
+
+          const numberB =
+            parseInt(
+              b.taskNumber || "0"
+            );
+
+
+          return numberA - numberB;
+
+        });
+
+
+
+        /* =================================
+           NO ACTIVE TASK
+        ================================= */
+
+        if (tasks.length === 0) {
+
+          taskList.innerHTML = `
+
+            <div class="empty">
+
+              Abhi koi active task
+              available nahi hai.
+
+            </div>
+
+          `;
+
+          return;
+
+        }
+
+
+
+        /* =================================
+           SHOW TASKS
+        ================================= */
+
+        tasks.forEach((task) => {
+
+
+          const card =
+            document.createElement("div");
+
+
+          card.className =
+            "task-card";
+
+
+
+          /* App name */
+
+          const appName =
+            task.title
+              ? String(task.title)
+              : "Task " + task.taskNumber;
+
+
+
+          /* Reward */
+
+          const reward =
+            task.reward !== ""
+              ? String(task.reward)
+              : "0";
+
+
+
+          /* Link */
+
+          const link =
+            task.link
+              ? String(task.link).trim()
+              : "";
+
+
+
+          /* =================================
+             CARD HTML
+          ================================= */
+
+          card.innerHTML = `
+
+            <div class="task-number">
+
+              Task ${escapeHTML(
+                String(task.taskNumber)
+              )}
+
+            </div>
+
+
+            <div class="task-top">
+
+              <div class="task-title">
+
+                ${escapeHTML(
+                  appName
+                )}
+
+              </div>
+
+
+              <div class="reward">
+
+                ₹${escapeHTML(
+                  reward
+                )}
+
+              </div>
+
+            </div>
+
+
+            <div class="task-status">
+
+              ● Active
+
+            </div>
+
+
+            <button class="task-button">
+
+              Start Task
+
+            </button>
+
+          `;
+
+
+
+          /* =================================
+             START BUTTON
+          ================================= */
+
+          const button =
+            card.querySelector(
+              ".task-button"
+            );
+
+
+
+          button.addEventListener(
+
+            "click",
+
+            () => {
+
+
+              if (!link) {
+
+                alert(
+                  "Is task ka App Link available nahi hai."
+                );
+
+                return;
+
+              }
+
+
+
+              /* Open app/site link */
+
+              window.open(
+
+                link,
+
+                "_blank",
+
+                "noopener,noreferrer"
+
               );
 
-              return;
 
             }
 
+          );
 
-            window.open(
-              link,
-              "_blank"
-            );
 
-          }
+
+          taskList.appendChild(card);
+
+
+        });
+
+
+      }
+
+
+      catch (error) {
+
+
+        console.error(
+
+          "Firebase Error:",
+
+          error
+
         );
 
 
-        taskList.appendChild(card);
 
-      });
+        /* Hide loading */
 
+        loading.style.display =
+          "none";
+
+
+
+        /* Show error */
+
+        errorBox.style.display =
+          "block";
+
+
+
+        errorBox.innerHTML = `
+
+          Tasks load nahi ho pa rahe hain.<br><br>
+
+          Firebase Firestore Rules aur
+          collection name check karein.
+
+        `;
+
+
+      }
 
     }
 
-    catch (error) {
-
-      console.error(
-        "Firebase Error:",
-        error
-      );
 
 
-      loading.style.display =
-        "none";
+    /* =====================================
+       SECURITY - HTML ESCAPE
+    ===================================== */
 
+    function escapeHTML(value) {
 
-      errorBox.style.display =
-        "block";
+      return String(value)
 
+        .replace(
+          /&/g,
+          "&amp;"
+        )
 
-      errorBox.textContent =
-        "Tasks load nahi ho pa rahe hain. Firebase Rules check karein.";
+        .replace(
+          /</g,
+          "&lt;"
+        )
+
+        .replace(
+          />/g,
+          "&gt;"
+        )
+
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+
+        .replace(
+          /'/g,
+          "&#039;"
+        );
 
     }
 
-  }
 
 
-  /* ===============================
-     SECURITY
-  =============================== */
+    /* =====================================
+       START
+    ===================================== */
 
-  function escapeHTML(value) {
-
-    return value
-
-      .replace(/&/g, "&amp;")
-
-      .replace(/</g, "&lt;")
-
-      .replace(/>/g, "&gt;")
-
-      .replace(/"/g, "&quot;")
-
-      .replace(/'/g, "&#039;");
-
-  }
+    loadTasks();
 
 
-  /* ===============================
-     START
-  =============================== */
+  </script>
 
-  loadTasks();
-
-</script>
 
 </body>
-</html>
+
+  </html>
