@@ -1,1 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Earn Pocket Money</title>
+
+<style>
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#f5f7fb;
+  color:#222;
+}
+
+header{
+  background:#fff;
+  padding:22px 15px;
+  text-align:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+header h1{
+  font-size:25px;
+  margin-bottom:6px;
+}
+
+header p{
+  color:#666;
+}
+
+.container{
+  width:94%;
+  max-width:600px;
+  margin:20px auto;
+}
+
+.wallet{
+  background:#fff;
+  border-radius:20px;
+  padding:25px;
+  text-align:center;
+  box-shadow:0 3px 12px rgba(0,0,0,.08);
+  margin-bottom:20px;
+}
+
+.wallet-title{
+  font-size:22px;
+  color:#666;
+}
+
+.wallet-balance{
+  font-size:42px;
+  font-weight:bold;
+  color:#16803c;
+  margin-top:8px;
+}
+
+.welcome{
+  background:#fff;
+  border-radius:15px;
+  padding:25px 20px;
+  margin-bottom:18px;
+  text-align:center;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.welcome h2{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.welcome p{
+  color:#666;
+}
+
+#loading{
+  text-align:center;
+  padding:30px;
+  color:#555;
+}
+
+#error{
+  display:none;
+  background:#ffe9e9;
+  color:#c62828;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+  text-align:center;
+}
+
+#taskList{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.task-card{
+  background:#fff;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 3px 12px rgba(0,0,0,.08);
+}
+
+.task-number{
+  color:#1877f2;
+  font-size:15px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.task-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.task-title{
+  font-size:25px;
+  font-weight:bold;
+}
+
+.reward{
+  background:#e8f5e9;
+  color:#16803c;
+  padding:9px 15px;
+  border-radius:25px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.task-status{
+  color:#16803c;
+  margin-top:15px;
+  font-size:16px;
+}
+
+.task-button,
+.submit-button{
+  width:100%;
+  border:none;
+  background:#1877f2;
+  color:white;
+  padding:16px;
+  border-radius:10px;
+  font-size:18px;
+  font-weight:bold;
+  margin-top:20px;
+}
+
+.submit-button{
+  background:#16803c;
+}
+
+.file-box{
+  width:100%;
+  margin-top:15px;
+  padding:12px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  background:#fafafa;
+}
+
+.done{
+  margin-top:18px;
+  padding:14px;
+  border-radius:10px;
+  background:#e8f5e9;
+  color:#16803c;
+  font-size:18px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.completed{
+  opacity:.85;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>Earn Pocket Money</h1>
+
+<p>Complete tasks and earn rewards</p>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- WALLET -->
+
+<div class="wallet">
+
+<div class="wallet-title">
+💰 Wallet Balance
+</div>
+
+<div class="wallet-balance" id="walletBalance">
+₹0
+</div>
+
+</div>
+
+
+<div class="welcome">
+
+<h2>Available Tasks</h2>
+
+<p>Choose a task below to get started.</p>
+
+</div>
+
+
+<div id="error"></div>
+
+<div id="loading">
+Loading tasks...
+</div>
+
+<div id="taskList"></div>
+
+
+</div>
+
+
+<script type="module">
+
+
+/* ===============================
+   FIREBASE IMPORT
+================================ */
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+  runTransaction
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  getAuth,
+  signInAnonymously
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+
+/* ===============================
+   FIREBASE CONFIG
+================================ */
+
+const firebaseConfig = {
+
+  apiKey:
+  "AIzaSyD73vPDGWuHdMRsnUWQ_NFXDMWIHPcrviE",
+
+  authDomain:
+  "earn-pocket-money-4b1db.firebaseapp.com",
+
+  projectId:
+  "earn-pocket-money-4b1db",
+
+  storageBucket:
+  "earn-pocket-money-4b1db.firebasestorage.app",
+
+  messagingSenderId:
+  "409452910576",
+
+  appId:
+  "1:409452910576:web:3ffeda7b9a85b05cf9ef35",
+
+  measurementId:
+  "G-M7VKBVE2MM"
+
+};
+
+
+/* ===============================
+   START FIREBASE
+================================ */
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+const auth =
+getAuth(app);
+
+const storage =
+getStorage(app);
+
+
+/* ===============================
+   HTML
+================================ */
+
+const taskList =
+document.getElementById("taskList");
+
+const loading =
+document.getElementById("loading");
+
+const errorBox =
+document.getElementById("error");
+
+const walletBalance =
+document.getElementById("walletBalance");
+
+
+/* ===============================
+   CUSTOMER LOGIN
+================================ */
+
+async function startCustomer(){
+
+  try{
+
+    const result =
+      await signInAnonymously(auth);
+
+    return result.user;
+
+  }
+  catch(error){
+
+    console.error(error);
+
+    showError(
+      "Customer account create nahi ho pa raha hai."
+    );
+
+    throw error;
+
+  }
+
+}
+
+
+/* ===============================
+   WALLET
+================================ */
+
+async function loadWallet(user){
+
+  const walletRef =
+    doc(
+      db,
+      "users",
+      user.uid
+    );
+
+  const walletSnap =
+    await getDoc(walletRef);
+
+
+  if(!walletSnap.exists()){
+
+    await setDoc(
+      walletRef,
+      {
+        wallet:0,
+        createdAt:new Date()
+      }
+    );
+
+    walletBalance.innerText =
+      "₹0";
+
+    return 0;
+
+  }
+
+
+  const data =
+    walletSnap.data();
+
+  const balance =
+    Number(data.wallet || 0);
+
+  walletBalance.innerText =
+    "₹" + balance;
+
+  return balance;
+
+}
+
+
+/* ===============================
+   FIELD FINDER
+================================ */
+
+function getField(data,names){
+
+  const keys =
+    Object.keys(data);
+
+  for(const wanted of names){
+
+    const cleanWanted =
+      wanted
+      .toLowerCase()
+      .replace(/\s+/g,"");
+
+    for(const key of keys){
+
+      const cleanKey =
+        key
+        .toLowerCase()
+        .replace(/\s+/g,"");
+
+      if(cleanKey === cleanWanted){
+
+        return data[key];
+
+      }
+
+    }
+
+  }
+
+  return "";
+
+}
+
+
+/* ===============================
+   TASK NUMBER
+================================ */
+
+function getTaskNumber(id){
+
+  const match =
+    String(id).match(/\d+/);
+
+  return match
+    ? match[0]
+    : "";
+
+}
+
+
+/* ===============================
+   HTML ESCAPE
+================================ */
+
+function escapeHTML(value){
+
+  return String(value)
+
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* ===============================
+   CHECK COMPLETED
+================================ */
+
+async function isTaskCompleted(user,taskId){
+
+  const completedRef =
+    doc(
+      db,
+      "users",
+      user.uid,
+      "completedTasks",
+      taskId
+    );
+
+  const snap =
+    await getDoc(completedRef);
+
+  return snap.exists();
+
+}
+
+
+/* ===============================
+   COMPLETE TASK
+================================ */
+
+async function completeTask(
+  user,
+  taskId,
+  file,
+  button,
+  doneBox
+){
+
+  if(!file){
+
+    alert(
+      "Pehle screenshot select karein."
+    );
+
+    return;
+
+  }
+
+
+  button.disabled =
+    true;
+
+  button.innerText =
+    "Uploading...";
+
+
+  try{
+
+    /* ==========================
+       CHECK AGAIN
+    ========================== */
+
+    const completedRef =
+      doc(
+        db,
+        "users",
+        user.uid,
+        "completedTasks",
+        taskId
+      );
+
+    const alreadyDone =
+      await getDoc(completedRef);
+
+
+    if(alreadyDone.exists()){
+
+      doneBox.style.display =
+        "block";
+
+      doneBox.innerText =
+        "✓ Done — ₹100 already added";
+
+      button.style.display =
+        "none";
+
+      return;
+
+    }
+
+
+    /* ==========================
+       UPLOAD SCREENSHOT
+    ========================== */
+
+    const fileName =
+      Date.now() +
+      "_" +
+      file.name;
+
+    const storageRef =
+      ref(
+        storage,
+        "proofs/" +
+        user.uid +
+        "/" +
+        taskId +
+        "/" +
+        fileName
+      );
+
+
+    await uploadBytes(
+      storageRef,
+      file
+    );
+
+
+    const screenshotURL =
+      await getDownloadURL(
+        storageRef
+      );
+
+
+    /* ==========================
+       ADD ₹100
+    ========================== */
+
+    const walletRef =
+      doc(
+        db,
+        "users",
+        user.uid
+      );
+
+
+    await runTransaction(
+      db,
+      async(transaction)=>{
+
+        const walletSnap =
+          await transaction.get(
+            walletRef
+          );
+
+
+        let currentBalance =
+          0;
+
+
+        if(walletSnap.exists()){
+
+          currentBalance =
+            Number(
+              walletSnap.data().wallet || 0
+            );
+
+        }
+
+
+        const newBalance =
+          currentBalance + 100;
+
+
+        /* Wallet */
+
+        transaction.set(
+          walletRef,
+          {
+            wallet:newBalance
+          },
+          {
+            merge:true
+          }
+        );
+
+
+        /* Completed task */
+
+        transaction.set(
+          completedRef,
+          {
+            reward:100,
+            screenshot:screenshotURL,
+            completedAt:new Date()
+          }
+        );
+
+      }
+    );
+
+
+    /* ==========================
+       UPDATE SCREEN
+    ========================== */
+
+    const walletSnap =
+      await getDoc(walletRef);
+
+    const newWallet =
+      Number(
+        walletSnap.data().wallet || 0
+      );
+
+
+    walletBalance.innerText =
+      "₹" + newWallet;
+
+
+    doneBox.style.display =
+      "block";
+
+    doneBox.innerText =
+      "✓ Done — ₹100 Wallet mein add ho gaye";
+
+
+    button.style.display =
+      "none";
+
+
+  }
+  catch(error){
+
+    console.error(error);
+
+    alert(
+      "Screenshot upload nahi ho saka. Firebase Storage/Rules check karein."
+    );
+
+    button.disabled =
+      false;
+
+    button.innerText =
+      "Upload & Submit";
+
+  }
+
+}
+
+
+/* ===============================
+   LOAD TASKS
+================================ */
+
+async function loadTasks(user){
+
+  try{
+
+    const snapshot =
+      await getDocs(
+        collection(db,"Task")
+      );
+
+
+    loading.style.display =
+      "none";
+
+
+    let tasks = [];
+
+
+    snapshot.forEach((taskDoc)=>{
+
+      const data =
+        taskDoc.data();
+
+
+      const title =
+        getField(
+          data,
+          [
+            "Title",
+            "title",
+            "Task Name",
+            "taskName",
+            "App Name",
+            "appName"
+          ]
+        );
+
+
+      const reward =
+        getField(
+          data,
+          [
+            "Reward",
+            "reward"
+          ]
+        );
+
+
+      const status =
+        getField(
+          data,
+          [
+            "Status",
+            "status"
+          ]
+        );
+
+
+      const link =
+        getField(
+          data,
+          [
+            "App Link",
+            "AppLink",
+            "Link",
+            "link"
+          ]
+        );
+
+
+      tasks.push({
+
+        id:taskDoc.id,
+
+        taskNumber:
+          getTaskNumber(taskDoc.id),
+
+        title:title,
+
+        reward:reward,
+
+        status:status,
+
+        link:link
+
+      });
+
+    });
+
+
+    tasks =
+      tasks.filter(
+        task =>
+        String(task.status)
+        .trim()
+        .toLowerCase()
+        === "active"
+      );
+
+
+    tasks.sort(
+      (a,b)=>
+      Number(a.taskNumber)
+      -
+      Number(b.taskNumber)
+    );
+
+
+    if(tasks.length === 0){
+
+      taskList.innerHTML =
+      `<div class="welcome">
+       Koi active task nahi hai.
+       </div>`;
+
+      return;
+
+    }
+
+
+    for(const task of tasks){
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "task-card";
+
+
+      const completed =
+        await isTaskCompleted(
+          user,
+          task.id
+        );
+
+
+      const appName =
+        task.title
+        ? String(task.title)
+        : "Task " + task.taskNumber;
+
+
+      const link =
+        task.link
+        ? String(task.link).trim()
+        : "";
+
+
+      card.innerHTML = `
+
+        <div class="task-number">
+
+          Task ${escapeHTML(
+            task.taskNumber
+          )}
+
+        </div>
+
+
+        <div class="task-top">
+
+          <div class="task-title">
+
+            ${escapeHTML(appName)}
+
+          </div>
+
+
+          <div class="reward">
+
+            ₹100
+
+          </div>
+
+        </div>
+
+
+        <div class="task-status">
+
+          ● Active
+
+        </div>
+
+
+        ${
+          completed
+          ? `
+            <div class="done">
+              ✓ Done — ₹100 added
+            </div>
+          `
+          : `
+
+            <button class="task-button">
+              Start Task
+            </button>
+
+            <input
+              type="file"
+              accept="image/*"
+              class="file-box"
+            >
+
+            <button class="submit-button">
+              Upload & Submit
+            </button>
+
+            <div
+              class="done"
+              style="display:none">
+            </div>
+
+          `
+        }
+
+      `;
+
+
+      if(!completed){
+
+        const startButton =
+          card.querySelector(
+            ".task-button"
+          );
+
+        const fileInput =
+          card.querySelector(
+            ".file-box"
+          );
+
+        const submitButton =
+          card.querySelector(
+            ".submit-button"
+          );
+
+        const doneBox =
+          card.querySelector(
+            ".done"
+          );
+
+
+        /* Start task */
+
+        startButton.addEventListener(
+          "click",
+          ()=>{
+
+            if(!link){
+
+              alert(
+                "Is task ka link available nahi hai."
+              );
+
+              return;
+
+            }
+
+
+            window.open(
+              link,
+              "_blank"
+            );
+
+          }
+        );
+
+
+        /* Submit */
+
+        submitButton.addEventListener(
+          "click",
+          ()=>{
+
+            const file =
+              fileInput.files[0];
+
+
+            completeTask(
+              user,
+              task.id,
+              file,
+              submitButton,
+              doneBox
+            );
+
+          }
+        );
+
+      }
+
+
+      taskList.appendChild(card);
+
+    }
+
+  }
+  catch(error){
+
+    console.error(error);
+
+    loading.style.display =
+      "none";
+
+    showError(
+      "Tasks load nahi ho pa rahe hain. Firebase Rules check karein."
+    );
+
+  }
+
+}
+
+
+/* ===============================
+   ERROR
+================================ */
+
+function showError(message){
+
+  errorBox.style.display =
+    "block";
+
+  errorBox.innerText =
+    message;
+
+}
+
+
+/* ===============================
+   START
+================================ */
+
+async function start(){
+
+  try{
+
+    const user =
+      await startCustomer();
+
+    await loadWallet(user);
+
+    await loadTasks(user);
+
+  }
+  catch(error){
+
+    console.error(error);
+
+  }
+
+}
+
+
+start();
+
+</script>
+
+</body>
+</html>
