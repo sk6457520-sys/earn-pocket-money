@@ -25,9 +25,6 @@
       padding: 22px 15px;
       text-align: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      position: sticky;
-      top: 0;
-      z-index: 10;
     }
 
     header h1 {
@@ -135,10 +132,6 @@
       cursor: pointer;
     }
 
-    .task-button:active {
-      transform: scale(0.98);
-    }
-
     .empty {
       background: white;
       padding: 25px;
@@ -185,10 +178,9 @@
   </footer>
 
 
-  <!-- Firebase -->
-  <script type="module">
+  <!-- ================= FIREBASE ================= -->
 
-    /* Firebase SDK */
+  <script type="module">
 
     import { initializeApp }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -201,29 +193,40 @@
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-    /* =========================================
-       YOUR FIREBASE CONFIG
-       ========================================= */
+    /* ================= FIREBASE CONFIG ================= */
 
     const firebaseConfig = {
+
       apiKey: "AIzaSyD73vPDGWuHdMRsnUWQ_NFXDMWIHPcrviE",
-      authDomain: "earn-pocket-money-4b1db.firebaseapp.com",
-      projectId: "earn-pocket-money-4b1db",
-      storageBucket: "earn-pocket-money-4b1db.firebasestorage.app",
-      messagingSenderId: "409452910576",
-      appId: "1:409452910576:web:3ffeda7b9a85b05cf9ef35",
-      measurementId: "G-M7VKBVE2MM"
+
+      authDomain:
+        "earn-pocket-money-4b1db.firebaseapp.com",
+
+      projectId:
+        "earn-pocket-money-4b1db",
+
+      storageBucket:
+        "earn-pocket-money-4b1db.firebasestorage.app",
+
+      messagingSenderId:
+        "409452910576",
+
+      appId:
+        "1:409452910576:web:3ffeda7b9a85b05cf9ef35",
+
+      measurementId:
+        "G-M7VKBVE2MM"
     };
 
 
-    /* Firebase initialize */
+    /* ================= INITIALIZE ================= */
 
     const app = initializeApp(firebaseConfig);
 
     const db = getFirestore(app);
 
 
-    /* HTML elements */
+    /* ================= HTML ================= */
 
     const taskList =
       document.getElementById("taskList");
@@ -235,17 +238,16 @@
       document.getElementById("error");
 
 
-    /* =========================================
-       LOAD TASKS FROM FIRESTORE
-       ========================================= */
+    /* ================= LOAD TASKS ================= */
 
     async function loadTasks() {
 
       try {
 
-        const snapshot = await getDocs(
-          collection(db, "Task")
-        );
+        const snapshot =
+          await getDocs(
+            collection(db, "Task")
+          );
 
 
         loading.style.display = "none";
@@ -258,36 +260,74 @@
 
           const data = doc.data();
 
-          tasks.push({
-            id: doc.id,
-            ...data
-          });
+
+          const status =
+            String(
+              data.Status ||
+              data.status ||
+              ""
+            )
+            .trim()
+            .toLowerCase();
+
+
+          const title =
+            data.Title ||
+            data.title ||
+            "Task";
+
+
+          const reward =
+            data.Reward ??
+            data.reward ??
+            0;
+
+
+          const link =
+            data["App Link"] ||
+            data["App link"] ||
+            data.appLink ||
+            data.applink ||
+            "";
+
+
+          /* Sirf Active task */
+
+          if (status === "active") {
+
+            tasks.push({
+
+              id: doc.id,
+
+              title: title,
+
+              reward: reward,
+
+              link: link,
+
+              status: status
+
+            });
+
+          }
 
         });
 
 
-        /* Sirf Active Tasks */
-
-        tasks = tasks.filter((task) => {
-
-          return String(task.Status || "")
-            .toLowerCase() === "active";
-
-        });
-
-
-        /* Task number ke according order */
+        /* ================= SORT ================= */
 
         tasks.sort((a, b) => {
 
           const numberA =
             parseInt(
-              String(a.id).match(/\d+/)?.[0] || "0"
+              String(a.id)
+                .match(/\d+/)?.[0] || "0"
             );
 
           const numberB =
             parseInt(
-              String(b.id).match(/\d+/)?.[0] || "0"
+              String(b.id)
+                .match(/\d+/)?.[0] || "0"
             );
 
           return numberA - numberB;
@@ -295,7 +335,7 @@
         });
 
 
-        /* Agar koi task nahi mila */
+        /* ================= NO TASK ================= */
 
         if (tasks.length === 0) {
 
@@ -309,30 +349,15 @@
         }
 
 
-        /* =========================================
-           DISPLAY TASKS
-           ========================================= */
+        /* ================= DISPLAY ================= */
 
         tasks.forEach((task) => {
 
           const card =
             document.createElement("div");
 
-          card.className = "task-card";
-
-
-          const title =
-            task.Title || "Task";
-
-
-          const reward =
-            task.Reward ?? 0;
-
-
-          const link =
-            task["App Link"] ||
-            task["App link"] ||
-            "";
+          card.className =
+            "task-card";
 
 
           card.innerHTML = `
@@ -340,11 +365,15 @@
             <div class="task-top">
 
               <div class="task-title">
-                ${escapeHTML(String(title))}
+                ${escapeHTML(
+                  String(task.title)
+                )}
               </div>
 
               <div class="reward">
-                ₹${escapeHTML(String(reward))}
+                ₹${escapeHTML(
+                  String(task.reward)
+                )}
               </div>
 
             </div>
@@ -361,14 +390,16 @@
 
 
           const button =
-            card.querySelector(".task-button");
+            card.querySelector(
+              ".task-button"
+            );
 
 
           button.addEventListener(
             "click",
             () => {
 
-              if (!link) {
+              if (!task.link) {
 
                 alert(
                   "Is task ka link available nahi hai."
@@ -379,7 +410,7 @@
 
 
               window.open(
-                link,
+                task.link,
                 "_blank"
               );
 
@@ -391,8 +422,9 @@
 
         });
 
+      }
 
-      } catch (error) {
+      catch (error) {
 
         console.error(
           "Firebase Error:",
@@ -400,21 +432,23 @@
         );
 
 
-        loading.style.display = "none";
+        loading.style.display =
+          "none";
 
-        errorBox.style.display = "block";
+
+        errorBox.style.display =
+          "block";
+
 
         errorBox.textContent =
-          "Tasks load nahi ho pa rahe hain. Firebase Firestore Rules check karein.";
+          "Firebase se tasks load nahi ho pa rahe hain. Rules aur Firebase configuration check karein.";
 
       }
 
     }
 
 
-    /* =========================================
-       SECURITY FUNCTION
-       ========================================= */
+    /* ================= SECURITY ================= */
 
     function escapeHTML(value) {
 
@@ -428,11 +462,11 @@
     }
 
 
-    /* START */
+    /* ================= START ================= */
 
     loadTasks();
 
   </script>
 
 </body>
-</html>
+</html>       
