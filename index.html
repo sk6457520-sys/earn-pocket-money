@@ -450,15 +450,7 @@
           "task-card";
 
 
-        const title =
-  Object.keys(task).find(
-    key => key.trim().toLowerCase() === "title"
-  )
-    ? task[
-        Object.keys(task).find(
-          key => key.trim().toLowerCase() === "title"
-        )
-      ]
+        const title = task.Title || task.title || task.id;
     : task.id;
 
 
