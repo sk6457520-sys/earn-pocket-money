@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Earn Pocket Money</title>
 
 <style>
-
 *{
   box-sizing:border-box;
   margin:0;
@@ -181,52 +179,27 @@ header p{
   font-weight:bold;
   text-align:center;
 }
-
-.completed{
-  opacity:.85;
-}
-
 </style>
-
 </head>
 
 <body>
 
 <header>
-
 <h1>Earn Pocket Money</h1>
-
 <p>Complete tasks and earn rewards</p>
-
 </header>
-
 
 <div class="container">
 
-
-<!-- WALLET -->
-
 <div class="wallet">
-
-<div class="wallet-title">
-💰 Wallet Balance
+<div class="wallet-title">💰 Wallet Balance</div>
+<div class="wallet-balance" id="walletBalance">₹0</div>
 </div>
-
-<div class="wallet-balance" id="walletBalance">
-₹0
-</div>
-
-</div>
-
 
 <div class="welcome">
-
 <h2>Available Tasks</h2>
-
 <p>Choose a task below to get started.</p>
-
 </div>
-
 
 <div id="error"></div>
 
@@ -236,12 +209,9 @@ Loading tasks...
 
 <div id="taskList"></div>
 
-
 </div>
 
-
 <script type="module">
-
 
 /* ===============================
    FIREBASE IMPORT
@@ -266,14 +236,6 @@ import {
   signInAnonymously
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 
 /* ===============================
@@ -307,6 +269,17 @@ const firebaseConfig = {
 
 
 /* ===============================
+   CLOUDINARY
+================================ */
+
+const CLOUDINARY_CLOUD_NAME =
+  "tqwtccpr";
+
+const CLOUDINARY_UPLOAD_PRESET =
+  "task_screenshot";
+
+
+/* ===============================
    START FIREBASE
 ================================ */
 
@@ -319,12 +292,9 @@ getFirestore(app);
 const auth =
 getAuth(app);
 
-const storage =
-getStorage(app);
-
 
 /* ===============================
-   HTML
+   HTML ELEMENTS
 ================================ */
 
 const taskList =
@@ -341,31 +311,29 @@ document.getElementById("walletBalance");
 
 
 /* ===============================
+   ERROR
+================================ */
+
+function showError(message){
+
+  errorBox.style.display =
+    "block";
+
+  errorBox.innerText =
+    message;
+}
+
+
+/* ===============================
    CUSTOMER LOGIN
 ================================ */
 
 async function startCustomer(){
 
-  try{
+  const result =
+    await signInAnonymously(auth);
 
-    const result =
-      await signInAnonymously(auth);
-
-    return result.user;
-
-  }
-  catch(error){
-
-    console.error(error);
-
-    showError(
-      "Customer account create nahi ho pa raha hai."
-    );
-
-    throw error;
-
-  }
-
+  return result.user;
 }
 
 
@@ -385,7 +353,6 @@ async function loadWallet(user){
   const walletSnap =
     await getDoc(walletRef);
 
-
   if(!walletSnap.exists()){
 
     await setDoc(
@@ -400,9 +367,7 @@ async function loadWallet(user){
       "₹0";
 
     return 0;
-
   }
-
 
   const data =
     walletSnap.data();
@@ -414,7 +379,6 @@ async function loadWallet(user){
     "₹" + balance;
 
   return balance;
-
 }
 
 
@@ -444,15 +408,11 @@ function getField(data,names){
       if(cleanKey === cleanWanted){
 
         return data[key];
-
       }
-
     }
-
   }
 
   return "";
-
 }
 
 
@@ -468,7 +428,6 @@ function getTaskNumber(id){
   return match
     ? match[0]
     : "";
-
 }
 
 
@@ -479,13 +438,11 @@ function getTaskNumber(id){
 function escapeHTML(value){
 
   return String(value)
-
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;")
     .replace(/'/g,"&#039;");
-
 }
 
 
@@ -493,7 +450,10 @@ function escapeHTML(value){
    CHECK COMPLETED
 ================================ */
 
-async function isTaskCompleted(user,taskId){
+async function isTaskCompleted(
+  user,
+  taskId
+){
 
   const completedRef =
     doc(
@@ -508,7 +468,58 @@ async function isTaskCompleted(user,taskId){
     await getDoc(completedRef);
 
   return snap.exists();
+}
 
+
+/* ===============================
+   CLOUDINARY UPLOAD
+================================ */
+
+async function uploadToCloudinary(file){
+
+  const uploadURL =
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    file
+  );
+
+  formData.append(
+    "upload_preset",
+    CLOUDINARY_UPLOAD_PRESET
+  );
+
+  const response =
+    await fetch(
+      uploadURL,
+      {
+        method:"POST",
+        body:formData
+      }
+    );
+
+  if(!response.ok){
+
+    const errorText =
+      await response.text();
+
+    console.error(
+      errorText
+    );
+
+    throw new Error(
+      "Cloudinary upload failed"
+    );
+  }
+
+  const data =
+    await response.json();
+
+  return data.secure_url;
 }
 
 
@@ -531,9 +542,25 @@ async function completeTask(
     );
 
     return;
-
   }
 
+  if(!file.type.startsWith("image/")){
+
+    alert(
+      "Sirf image screenshot upload karein."
+    );
+
+    return;
+  }
+
+  if(file.size > 10 * 1024 * 1024){
+
+    alert(
+      "Screenshot 10 MB se chhota hona chahiye."
+    );
+
+    return;
+  }
 
   button.disabled =
     true;
@@ -541,12 +568,9 @@ async function completeTask(
   button.innerText =
     "Uploading...";
 
-
   try{
 
-    /* ==========================
-       CHECK AGAIN
-    ========================== */
+    /* CHECK AGAIN */
 
     const completedRef =
       doc(
@@ -558,8 +582,9 @@ async function completeTask(
       );
 
     const alreadyDone =
-      await getDoc(completedRef);
-
+      await getDoc(
+        completedRef
+      );
 
     if(alreadyDone.exists()){
 
@@ -573,46 +598,18 @@ async function completeTask(
         "none";
 
       return;
-
     }
 
 
-    /* ==========================
-       UPLOAD SCREENSHOT
-    ========================== */
-
-    const fileName =
-      Date.now() +
-      "_" +
-      file.name;
-
-    const storageRef =
-      ref(
-        storage,
-        "proofs/" +
-        user.uid +
-        "/" +
-        taskId +
-        "/" +
-        fileName
-      );
-
-
-    await uploadBytes(
-      storageRef,
-      file
-    );
-
+    /* CLOUDINARY */
 
     const screenshotURL =
-      await getDownloadURL(
-        storageRef
+      await uploadToCloudinary(
+        file
       );
 
 
-    /* ==========================
-       ADD ₹100
-    ========================== */
+    /* WALLET */
 
     const walletRef =
       doc(
@@ -620,7 +617,6 @@ async function completeTask(
         "users",
         user.uid
       );
-
 
     await runTransaction(
       db,
@@ -631,10 +627,8 @@ async function completeTask(
             walletRef
           );
 
-
         let currentBalance =
           0;
-
 
         if(walletSnap.exists()){
 
@@ -642,15 +636,11 @@ async function completeTask(
             Number(
               walletSnap.data().wallet || 0
             );
-
         }
-
 
         const newBalance =
           currentBalance + 100;
 
-
-        /* Wallet */
 
         transaction.set(
           walletRef,
@@ -662,8 +652,6 @@ async function completeTask(
           }
         );
 
-
-        /* Completed task */
 
         transaction.set(
           completedRef,
@@ -678,18 +666,17 @@ async function completeTask(
     );
 
 
-    /* ==========================
-       UPDATE SCREEN
-    ========================== */
+    /* UPDATE WALLET */
 
     const walletSnap =
-      await getDoc(walletRef);
+      await getDoc(
+        walletRef
+      );
 
     const newWallet =
       Number(
         walletSnap.data().wallet || 0
       );
-
 
     walletBalance.innerText =
       "₹" + newWallet;
@@ -701,10 +688,8 @@ async function completeTask(
     doneBox.innerText =
       "✓ Done — ₹100 Wallet mein add ho gaye";
 
-
     button.style.display =
       "none";
-
 
   }
   catch(error){
@@ -712,7 +697,7 @@ async function completeTask(
     console.error(error);
 
     alert(
-      "Screenshot upload nahi ho saka. Firebase Storage/Rules check karein."
+      "Screenshot upload nahi ho saka. Firebase Authentication/Rules ya Cloudinary setting check karein."
     );
 
     button.disabled =
@@ -720,9 +705,7 @@ async function completeTask(
 
     button.innerText =
       "Upload & Submit";
-
   }
-
 }
 
 
@@ -736,123 +719,127 @@ async function loadTasks(user){
 
     const snapshot =
       await getDocs(
-        collection(db,"Task")
+        collection(
+          db,
+          "Task"
+        )
       );
-
 
     loading.style.display =
       "none";
 
-
     let tasks = [];
 
 
-    snapshot.forEach((taskDoc)=>{
+    snapshot.forEach(
+      (taskDoc)=>{
 
-      const data =
-        taskDoc.data();
+        const data =
+          taskDoc.data();
 
+        const title =
+          getField(
+            data,
+            [
+              "Title",
+              "title",
+              "Task Name",
+              "taskName",
+              "App Name",
+              "appName"
+            ]
+          );
 
-      const title =
-        getField(
-          data,
-          [
-            "Title",
-            "title",
-            "Task Name",
-            "taskName",
-            "App Name",
-            "appName"
-          ]
-        );
+        const reward =
+          getField(
+            data,
+            [
+              "Reward",
+              "reward"
+            ]
+          );
 
+        const status =
+          getField(
+            data,
+            [
+              "Status",
+              "status"
+            ]
+          );
 
-      const reward =
-        getField(
-          data,
-          [
-            "Reward",
-            "reward"
-          ]
-        );
-
-
-      const status =
-        getField(
-          data,
-          [
-            "Status",
-            "status"
-          ]
-        );
-
-
-      const link =
-        getField(
-          data,
-          [
-            "App Link",
-            "AppLink",
-            "Link",
-            "link"
-          ]
-        );
+        const link =
+          getField(
+            data,
+            [
+              "App Link",
+              "AppLink",
+              "Link",
+              "link"
+            ]
+          );
 
 
-      tasks.push({
+        tasks.push({
 
-        id:taskDoc.id,
+          id:taskDoc.id,
 
-        taskNumber:
-          getTaskNumber(taskDoc.id),
+          taskNumber:
+            getTaskNumber(
+              taskDoc.id
+            ),
 
-        title:title,
+          title:title,
 
-        reward:reward,
+          reward:reward,
 
-        status:status,
+          status:status,
 
-        link:link
+          link:link
 
-      });
+        });
 
-    });
+      }
+    );
 
 
     tasks =
       tasks.filter(
         task =>
-        String(task.status)
-        .trim()
-        .toLowerCase()
-        === "active"
+          String(task.status)
+          .trim()
+          .toLowerCase()
+          === "active"
       );
 
 
     tasks.sort(
       (a,b)=>
-      Number(a.taskNumber)
-      -
-      Number(b.taskNumber)
+        Number(a.taskNumber)
+        -
+        Number(b.taskNumber)
     );
 
 
     if(tasks.length === 0){
 
       taskList.innerHTML =
-      `<div class="welcome">
-       Koi active task nahi hai.
-       </div>`;
+      `
+      <div class="welcome">
+        Koi active task nahi hai.
+      </div>
+      `;
 
       return;
-
     }
 
 
     for(const task of tasks){
 
       const card =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
       card.className =
         "task-card";
@@ -868,7 +855,8 @@ async function loadTasks(user){
       const appName =
         task.title
         ? String(task.title)
-        : "Task " + task.taskNumber;
+        : "Task " +
+          task.taskNumber;
 
 
       const link =
@@ -880,66 +868,60 @@ async function loadTasks(user){
       card.innerHTML = `
 
         <div class="task-number">
-
           Task ${escapeHTML(
             task.taskNumber
           )}
-
         </div>
-
 
         <div class="task-top">
 
           <div class="task-title">
-
             ${escapeHTML(appName)}
-
           </div>
-
 
           <div class="reward">
-
             ₹100
-
           </div>
 
         </div>
 
-
         <div class="task-status">
-
           ● Active
-
         </div>
-
 
         ${
           completed
-          ? `
-            <div class="done">
-              ✓ Done — ₹100 added
-            </div>
+
+          ?
+
           `
-          : `
+          <div class="done">
+            ✓ Done — ₹100 added
+          </div>
+          `
 
-            <button class="task-button">
-              Start Task
-            </button>
+          :
 
-            <input
-              type="file"
-              accept="image/*"
-              class="file-box"
-            >
+          `
 
-            <button class="submit-button">
-              Upload & Submit
-            </button>
+          <button class="task-button">
+            Start Task
+          </button>
 
-            <div
-              class="done"
-              style="display:none">
-            </div>
+          <input
+            type="file"
+            accept="image/*"
+            class="file-box"
+          >
+
+          <button class="submit-button">
+            Upload & Submit
+          </button>
+
+          <div
+            class="done"
+            style="display:none">
+          </div>
 
           `
         }
@@ -970,7 +952,7 @@ async function loadTasks(user){
           );
 
 
-        /* Start task */
+        /* START TASK */
 
         startButton.addEventListener(
           "click",
@@ -983,9 +965,7 @@ async function loadTasks(user){
               );
 
               return;
-
             }
-
 
             window.open(
               link,
@@ -996,7 +976,7 @@ async function loadTasks(user){
         );
 
 
-        /* Submit */
+        /* SUBMIT */
 
         submitButton.addEventListener(
           "click",
@@ -1004,7 +984,6 @@ async function loadTasks(user){
 
             const file =
               fileInput.files[0];
-
 
             completeTask(
               user,
@@ -1020,7 +999,9 @@ async function loadTasks(user){
       }
 
 
-      taskList.appendChild(card);
+      taskList.appendChild(
+        card
+      );
 
     }
 
@@ -1035,24 +1016,7 @@ async function loadTasks(user){
     showError(
       "Tasks load nahi ho pa rahe hain. Firebase Rules check karein."
     );
-
   }
-
-}
-
-
-/* ===============================
-   ERROR
-================================ */
-
-function showError(message){
-
-  errorBox.style.display =
-    "block";
-
-  errorBox.innerText =
-    message;
-
 }
 
 
@@ -1067,17 +1031,22 @@ async function start(){
     const user =
       await startCustomer();
 
-    await loadWallet(user);
+    await loadWallet(
+      user
+    );
 
-    await loadTasks(user);
+    await loadTasks(
+      user
+    );
 
   }
   catch(error){
 
     console.error(error);
 
+    loading.style.display =
+      "none";
   }
-
 }
 
 
@@ -1086,4 +1055,4 @@ start();
 </script>
 
 </body>
-</html>
+  </html>
