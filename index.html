@@ -50,6 +50,27 @@
       margin: 20px auto;
     }
 
+    .wallet {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .wallet-title {
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .wallet-balance {
+      font-size: 32px;
+      font-weight: bold;
+      color: #16803c;
+    }
+
     .welcome {
       background: #fff;
       border-radius: 15px;
@@ -189,6 +210,21 @@
   <div class="container">
 
 
+    <!-- WALLET -->
+
+    <div class="wallet">
+
+      <div class="wallet-title">
+        💰 Wallet Balance
+      </div>
+
+      <div class="wallet-balance">
+        ₹0
+      </div>
+
+    </div>
+
+
     <div class="welcome">
 
       <h2>Available Tasks</h2>
@@ -243,6 +279,20 @@
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
+    /* =====================================
+       FIREBASE AUTH IMPORT
+    ===================================== */
+
+    import {
+
+      getAuth,
+      signInAnonymously
+
+    }
+
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
 
     /* =====================================
        FIREBASE CONFIG
@@ -285,6 +335,10 @@
 
     const db =
       getFirestore(app);
+
+
+    const auth =
+      getAuth(app);
 
 
 
@@ -380,29 +434,19 @@
       try {
 
 
-        /* Get Task collection */
-
         const snapshot =
           await getDocs(
             collection(db, "Task")
           );
 
 
-
-        /* Hide loading */
-
         loading.style.display =
           "none";
-
 
 
         let tasks = [];
 
 
-
-        /* =================================
-           READ EVERY TASK
-        ================================= */
 
         snapshot.forEach((doc) => {
 
@@ -411,8 +455,6 @@
             doc.data();
 
 
-
-          /* App Name */
 
           const title =
             getField(
@@ -432,8 +474,6 @@
 
 
 
-          /* Reward */
-
           const reward =
             getField(
 
@@ -448,8 +488,6 @@
 
 
 
-          /* Status */
-
           const status =
             getField(
 
@@ -463,8 +501,6 @@
             );
 
 
-
-          /* App Link */
 
           const link =
             getField(
@@ -484,8 +520,6 @@
             );
 
 
-
-          /* Task number */
 
           const taskNumber =
             getTaskNumber(doc.id);
@@ -590,17 +624,11 @@
             "task-card";
 
 
-
-          /* App name */
-
           const appName =
             task.title
               ? String(task.title)
               : "Task " + task.taskNumber;
 
-
-
-          /* Reward */
 
           const reward =
             task.reward !== ""
@@ -608,19 +636,12 @@
               : "0";
 
 
-
-          /* Link */
-
           const link =
             task.link
               ? String(task.link).trim()
               : "";
 
 
-
-          /* =================================
-             CARD HTML
-          ================================= */
 
           card.innerHTML = `
 
@@ -672,10 +693,6 @@
 
 
 
-          /* =================================
-             START BUTTON
-          ================================= */
-
           const button =
             card.querySelector(
               ".task-button"
@@ -700,9 +717,6 @@
 
               }
 
-
-
-              /* Open app/site link */
 
               window.open(
 
@@ -734,27 +748,17 @@
 
 
         console.error(
-
           "Firebase Error:",
-
           error
-
         );
 
-
-
-        /* Hide loading */
 
         loading.style.display =
           "none";
 
 
-
-        /* Show error */
-
         errorBox.style.display =
           "block";
-
 
 
         errorBox.innerHTML = `
@@ -774,7 +778,7 @@
 
 
     /* =====================================
-       SECURITY - HTML ESCAPE
+       HTML ESCAPE
     ===================================== */
 
     function escapeHTML(value) {
@@ -811,10 +815,73 @@
 
 
     /* =====================================
-       START
+       START ANONYMOUS LOGIN
     ===================================== */
 
-    loadTasks();
+    async function startWebsite() {
+
+      try {
+
+        /*
+          Customer ko bina email/password
+          anonymous login diya jayega.
+        */
+
+        const userCredential =
+          await signInAnonymously(auth);
+
+
+        console.log(
+          "Anonymous user ID:",
+          userCredential.user.uid
+        );
+
+
+        /*
+          Anonymous login successful hone ke baad
+          tasks load honge.
+        */
+
+        await loadTasks();
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Anonymous Login Error:",
+          error
+        );
+
+
+        loading.style.display =
+          "none";
+
+
+        errorBox.style.display =
+          "block";
+
+
+        errorBox.innerHTML = `
+
+          Website login start nahi ho pa raha hai.<br><br>
+
+          Firebase Anonymous Authentication
+          check karein.
+
+        `;
+
+      }
+
+    }
+
+
+
+    /* =====================================
+       START WEBSITE
+    ===================================== */
+
+    startWebsite();
 
 
   </script>
@@ -822,4 +889,4 @@
 
 </body>
 
-  </html>
+</html>
