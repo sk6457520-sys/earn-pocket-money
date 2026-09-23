@@ -451,7 +451,15 @@
 
 
         const title =
-          task.title || "Task";
+  Object.keys(task).find(
+    key => key.trim().toLowerCase() === "title"
+  )
+    ? task[
+        Object.keys(task).find(
+          key => key.trim().toLowerCase() === "title"
+        )
+      ]
+    : task.id;
 
 
         const reward =
