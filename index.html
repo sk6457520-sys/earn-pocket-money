@@ -1,2 +1,295 @@
+    if(tasks.length === 0){
 
+      taskList.innerHTML = `
+        <div class="task-card">
+          <div style="text-align:center;color:#667085;padding:15px;">
+            Abhi koi task available nahi hai.
+          </div>
+        </div>
+      `;
+
+      return;
+    }
+
+
+    /* ===============================
+       SHOW TASKS
+    ================================ */
+
+    for(const task of tasks){
+
+      const completed =
+        await isTaskCompleted(
+          user,
+          task.id
+        );
+
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "task-card";
+
+
+      const reward =
+        Number(task.reward || 100);
+
+
+      card.innerHTML = `
+
+        <div class="task-number">
+          Task ${escapeHTML(task.taskNumber || "")}
+        </div>
+
+        <div class="task-top">
+
+          <div class="task-title">
+            ${escapeHTML(task.title || "Task")}
+          </div>
+
+          <div class="reward">
+            ₹${reward}
+          </div>
+
+        </div>
+
+        <div class="task-status">
+          Status: Active
+        </div>
+
+        ${
+          task.link
+          ?
+          `
+          <button class="task-button">
+            Open Task
+          </button>
+          `
+          :
+          `
+          <div style="
+            margin-top:15px;
+            color:#c62828;
+            font-size:14px;
+          ">
+            Task link available nahi hai.
+          </div>
+          `
+        }
+
+        ${
+          completed
+          ?
+          `
+          <div class="done">
+            ✓ Done — ₹${reward} Wallet mein add ho gaye
+          </div>
+          `
+          :
+          `
+          <div class="upload-area" style="display:none;">
+
+            <input
+              type="file"
+              accept="image/*"
+              class="file-box"
+            >
+
+            <button class="submit-button">
+              Upload & Submit
+            </button>
+
+          </div>
+
+          <div
+            class="done"
+            style="display:none;">
+          </div>
+          `
+        }
+
+      `;
+
+
+      taskList.appendChild(card);
+
+
+      /* ===============================
+         OPEN TASK
+      ================================ */
+
+      const taskButton =
+        card.querySelector(
+          ".task-button"
+        );
+
+
+      if(taskButton){
+
+        taskButton.addEventListener(
+          "click",
+          ()=>{
+
+            if(task.link){
+
+              window.open(
+                task.link,
+                "_blank"
+              );
+
+            }
+
+            const uploadArea =
+              card.querySelector(
+                ".upload-area"
+              );
+
+            if(uploadArea){
+
+              uploadArea.style.display =
+                "block";
+
+              uploadArea.scrollIntoView({
+                behavior:"smooth",
+                block:"center"
+              });
+
+            }
+
+          }
+        );
+
+      }
+
+
+      /* ===============================
+         SUBMIT TASK
+      ================================ */
+
+      const submitButton =
+        card.querySelector(
+          ".submit-button"
+        );
+
+
+      const fileInput =
+        card.querySelector(
+          ".file-box"
+        );
+
+
+      const doneBox =
+        card.querySelector(
+          ".done"
+        );
+
+
+      if(
+        submitButton &&
+        fileInput &&
+        doneBox
+      ){
+
+        submitButton.addEventListener(
+          "click",
+          ()=>{
+
+            const file =
+              fileInput.files[0];
+
+            completeTask(
+              user,
+              task.id,
+              file,
+              submitButton,
+              doneBox
+            );
+
+          }
+        );
+
+      }
+
+    }
+
+  }
+  catch(error){
+
+    console.error(
+      "Task loading error:",
+      error
+    );
+
+    loading.style.display =
+      "none";
+
+    showError(
+      "Tasks load nahi ho sake. Firebase Rules aur Task collection check karein."
+    );
+
+  }
+
+}
+
+
+/* ===============================
+   START APPLICATION
+================================ */
+
+async function startApp(){
+
+  try{
+
+    loading.style.display =
+      "block";
+
+    errorBox.style.display =
+      "none";
+
+
+    currentUser =
+      await startCustomer();
+
+
+    await loadWallet(
+      currentUser
+    );
+
+
+    await loadTasks(
+      currentUser
+    );
+
+
+  }
+  catch(error){
+
+    console.error(
+      "Application error:",
+      error
+    );
+
+    loading.style.display =
+      "none";
+
+    showError(
+      "Website start nahi ho pa rahi hai. Firebase Authentication aur Firebase Rules check karein."
+    );
+
+  }
+
+}
+
+
+/* ===============================
+   START
+================================ */
+
+startApp();
+
+</script>
+
+</body>
+</html>
               
