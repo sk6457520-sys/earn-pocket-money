@@ -892,13 +892,14 @@ HTML ESCAPE
 
 function escapeHTML(value){
 
-return String(value)
-.replace(/&/g,"&")
-.replace(/</g,"<")
-.replace(/>/g,">")
-.replace(/"/g,""")
-.replace(/'/g,"'");
-}
+  return String(value)
+  .replace(/&/g,"&")
+  .replace(/</g,"<")
+  .replace(/>/g,">")
+  .replace(/"/g,""")
+  .replace(/'/g,"'");
+
+       }
 
 /* ===============================
 CHECK COMPLETED
